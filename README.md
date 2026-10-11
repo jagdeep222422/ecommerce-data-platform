@@ -1,6 +1,6 @@
 # 🛒 E-Commerce Analytics & Demand Forecasting Platform
 
-[![CI/CD](https://github.com/YOUR_USERNAME/ecommerce-data-platform/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/ecommerce-data-platform/actions)
+[![CI/CD](https://github.com/kumarpradeep-hub/ecommerce-data-platform/actions/workflows/deploy.yml/badge.svg)](https://github.com/kumarpradeep-hub/ecommerce-data-platform/actions)
 [![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://python.org)
 [![Databricks](https://img.shields.io/badge/Databricks-Data%20Engineering-orange)](https://databricks.com)
 [![Delta Lake](https://img.shields.io/badge/Delta%20Lake-Medallion%20Architecture-blue)](https://delta.io)
