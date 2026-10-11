@@ -1,0 +1,89 @@
+resources:
+  jobs:
+    ecommerce_daily_pipeline:
+      name: "E-Commerce Daily Data Pipeline"
+      description: "Full pipeline: API ingestion → DLT Bronze/Silver/Gold → Data Quality → ML training"
+
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"   # Every day at 2:00 AM UTC
+        timezone_id: "Asia/Kolkata"
+
+      email_notifications:
+        on_failure:
+          - your.email@gmail.com
+        on_success: []
+
+      max_retries: 1
+      timeout_seconds: 3600   # 1 hour max
+
+      tasks:
+        # ── Task 1: Ingest Products ──────────────────────────────────────────
+        - task_key: ingest_products
+          description: "Fetch product data from FakeStore API → Bronze layer"
+          notebook_task:
+            notebook_path: /ecommerce-platform/ingestion/fetch_products
+            base_parameters:
+              output_path: "/mnt/datalake/bronze/products"
+          libraries:
+            - pypi:
+                package: "requests==2.31.0"
+
+        # ── Task 2: Ingest Orders ────────────────────────────────────────────
+        - task_key: ingest_orders
+          description: "Fetch cart/order data from FakeStore API → Bronze layer"
+          notebook_task:
+            notebook_path: /ecommerce-platform/ingestion/fetch_orders
+          libraries:
+            - pypi:
+                package: "requests==2.31.0"
+
+        # ── Task 3: Ingest Weather ───────────────────────────────────────────
+        - task_key: ingest_weather
+          description: "Fetch weather data from OpenWeatherMap API → Bronze layer"
+          notebook_task:
+            notebook_path: /ecommerce-platform/ingestion/fetch_weather
+          libraries:
+            - pypi:
+                package: "requests==2.31.0"
+
+        # ── Task 4: Run DLT Pipeline ─────────────────────────────────────────
+        - task_key: run_dlt_pipeline
+          description: "Process Bronze → Silver → Gold via Delta Live Tables"
+          pipeline_task:
+            pipeline_id: "YOUR_DLT_PIPELINE_ID_HERE"
+          depends_on:
+            - task_key: ingest_products
+            - task_key: ingest_orders
+            - task_key: ingest_weather
+
+        # ── Task 5: Data Quality Checks ──────────────────────────────────────
+        - task_key: data_quality_checks
+          description: "Run Great Expectations batch checks on Silver tables"
+          notebook_task:
+            notebook_path: /ecommerce-platform/quality/dq_checks
+          depends_on:
+            - task_key: run_dlt_pipeline
+          libraries:
+            - pypi:
+                package: "great-expectations==0.18.0"
+
+        # ── Task 6: Feature Engineering ──────────────────────────────────────
+        - task_key: build_features
+          description: "Build ML feature table from Gold layer"
+          notebook_task:
+            notebook_path: /ecommerce-platform/ml/feature_engineering
+          depends_on:
+            - task_key: data_quality_checks   # Only build features if data is clean!
+
+        # ── Task 7: Train Demand Forecast Model ──────────────────────────────
+        - task_key: train_model
+          description: "Train demand forecasting model with MLflow experiment tracking"
+          notebook_task:
+            notebook_path: /ecommerce-platform/ml/demand_forecast
+          depends_on:
+            - task_key: build_features
+          libraries:
+            - pypi:
+                package: "scikit-learn==1.3.0"
+            - pypi:
+                package: "mlflow==2.9.0"
